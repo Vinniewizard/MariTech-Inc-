@@ -1,0 +1,6 @@
+{
+  "name": "MariTech Inc.",
+  "description": "A lightweight, high-fidelity binary options and synthetic indices trading platform styled like Deriv, with real-time charting, contract customization, and demo/real account simulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
