@@ -110,7 +110,7 @@ export default function AuthModal({ isOpen, onClose, theme, onSuccess }: AuthMod
         
         {/* Header Graphic/Gradient */}
         <div className="relative h-32 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-violet-500 to-fuchsia-500 opacity-90" />
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-30 mix-blend-overlay" />
           
           <button 

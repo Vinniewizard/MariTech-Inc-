@@ -47,7 +47,7 @@ export default function Header({
 
   return (
     <header className={`sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b px-6 transition-colors duration-200 ${
-      theme === 'dark' ? 'border-zinc-800 bg-zinc-950 text-white' : 'border-gray-100 bg-white text-black'
+      theme === 'dark' ? 'border-slate-800 bg-slate-950 text-white' : 'border-slate-200 bg-slate-50 text-slate-900'
     }`}>
       {/* Brand Logo & Core navigation */}
       <div className="flex items-center space-x-8">
@@ -106,10 +106,10 @@ export default function Header({
         {/* Theme toggle Button */}
         <button
           onClick={onToggleTheme}
-          className={`rounded-lg p-1.5 transition-colors ${theme === 'dark' ? 'text-zinc-400 hover:text-white hover:bg-zinc-900' : 'text-gray-450 hover:text-black hover:bg-gray-50'}`}
+          className={`rounded-lg p-1.5 transition-colors ${theme === 'dark' ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' : 'text-slate-500 hover:text-slate-900 hover:bg-white'}`}
           title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
         >
-          {theme === 'dark' ? <Sun className="h-4.5 w-4.5 text-amber-400" /> : <Moon className="h-4.5 w-4.5 text-indigo-405" />}
+          {theme === 'dark' ? <Sun className="h-4.5 w-4.5 text-brand-accent shadow-[0_0_10px_rgba(245,158,11,0.3)]" /> : <Moon className="h-4.5 w-4.5 text-indigo-500" />}
         </button>
 
         {/* Total balance displays */}
@@ -210,7 +210,7 @@ export default function Header({
         {/* Sleek cashier action BUTTON */}
         <button
           onClick={onOpenCashier}
-          className="bg-black hover:bg-gray-900 text-white px-5 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+          className="bg-slate-900 hover:bg-black text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-black/10 active:scale-95"
         >
           <span>Cashier</span>
         </button>
@@ -232,11 +232,7 @@ export default function Header({
         {!currentUser && (
           <button
             onClick={onOpenAuth}
-            className={`rounded-md px-4 py-2 text-sm font-bold transition-all cursor-pointer border ${
-              theme === 'dark' 
-                ? 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700' 
-                : 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700'
-            }`}
+            className="rounded-lg px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer bg-gradient-to-r from-cyan-500 to-violet-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 active:scale-95"
           >
             Sign In
           </button>

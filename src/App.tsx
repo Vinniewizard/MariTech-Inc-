@@ -178,7 +178,7 @@ export default function App() {
     triggerToast("Your demo trade bag has been replenished with virtual $10,000.00!", true);
   };
 
-  // Handle deposit funding simulation
+  // Credit balance after server-side cashier verification
   const handleDepositCashier = (amount: number) => {
     setAccount((prev) => {
       const nextBal = prev.balance + amount;
@@ -190,7 +190,7 @@ export default function App() {
     triggerToast(`Deposited $${amount.toLocaleString()} into portfolio.`, true);
   };
 
-  // Handle withdrawals simulation
+  // Debit balance after server-side cashier dispatch
   const handleWithdrawCashier = (amount: number) => {
     setAccount((prev) => {
       const nextBal = Math.max(0, prev.balance - amount);
@@ -484,7 +484,7 @@ export default function App() {
   const activeTicks = assetsTicksMap[activeAsset.id] || [];
 
   return (
-    <div className={`min-h-screen font-sans ${theme === 'dark' ? 'bg-neutral-900 text-neutral-100' : 'bg-slate-100 text-neutral-900'} flex flex-col transition-colors duration-200`}>
+    <div className={`min-h-screen font-sans ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} flex flex-col transition-colors duration-200`}>
       {/* 1. Header Navigation System */}
       <Header
         account={account}
@@ -613,6 +613,8 @@ export default function App() {
         account={account}
         onDeposit={handleDepositCashier}
         onWithdraw={handleWithdrawCashier}
+        currentUser={currentUser}
+        theme={theme}
       />
 
       <GuideModal
