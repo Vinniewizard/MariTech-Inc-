@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "maritech-icn",
+  "name": "maritech",
   "main": "worker/index.ts",
   "compatibility_date": "2026-05-26",
   "observability": {
