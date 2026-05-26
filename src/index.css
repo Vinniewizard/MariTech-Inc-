@@ -10,12 +10,36 @@
   --color-brand-accent: #f59e0b; /* Golden Amber */
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: #f8fafc;
   color: #0f172a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  position: fixed;
+  margin: 0;
+  padding: 0;
 }
 
 /* Custom minimal scrollbar to keep layout clean */

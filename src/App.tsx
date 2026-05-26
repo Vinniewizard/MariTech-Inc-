@@ -484,7 +484,7 @@ export default function App() {
   const activeTicks = assetsTicksMap[activeAsset.id] || [];
 
   return (
-    <div className={`min-h-screen font-sans ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} flex flex-col transition-colors duration-200`}>
+    <div className={`w-screen h-screen overflow-hidden font-sans ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} flex flex-col transition-colors duration-200`}>
       {/* 1. Header Navigation System */}
       <Header
         account={account}

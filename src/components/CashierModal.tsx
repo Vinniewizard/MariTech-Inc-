@@ -176,7 +176,7 @@ export default function CashierModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/45 p-0 transition-all backdrop-blur-sm sm:items-center sm:p-4">
-      <div className={`relative w-full max-h-[100dvh] sm:max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-lg border p-3 sm:p-6 shadow-2xl transition-all sm:my-0 sm:max-w-md sm:rounded-xl ${
+      <div className={`relative w-screen max-w-full sm:w-full sm:max-w-md max-h-[100dvh] sm:max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-lg border shadow-2xl transition-all sm:my-0 sm:rounded-xl box-border px-3 py-3 sm:p-6 ${
         theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'
       }`}>
         <button
