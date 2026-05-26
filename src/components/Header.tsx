@@ -209,10 +209,22 @@ export default function Header({
 
         {/* Sleek cashier action BUTTON */}
         <button
-          onClick={onOpenCashier}
-          className="bg-slate-900 hover:bg-black text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-black/10 active:scale-95"
+          onClick={() => {
+            if (!currentUser) {
+              onOpenAuth();
+              return;
+            }
+            onOpenCashier();
+          }}
+          disabled={false}
+          className={`px-4 sm:px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-black/10 active:scale-95 ${
+            currentUser
+              ? 'bg-slate-900 hover:bg-black text-white'
+              : 'bg-gray-300 text-gray-500 hover:bg-gray-400'
+          }`}
+          title={currentUser ? 'Open Cashier' : 'Login required to access Cashier'}
         >
-          <span>Cashier</span>
+          <span>{currentUser ? 'Cashier' : 'Login'}</span>
         </button>
 
         {/* Settings button - added after Cashier */}

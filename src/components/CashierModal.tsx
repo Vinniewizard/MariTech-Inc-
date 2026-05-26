@@ -175,40 +175,43 @@ export default function CashierModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/45 p-0 transition-all backdrop-blur-sm sm:items-center sm:p-4">
-      <div className={`relative w-full rounded-t-2xl sm:rounded-lg border max-h-[90dvh] sm:max-h-[85dvh] overflow-y-auto p-4 sm:p-6 shadow-2xl transition-all sm:my-0 sm:max-w-md sm:rounded-xl ${
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/45 p-0 transition-all backdrop-blur-sm sm:items-center sm:p-4">
+      <div className={`relative w-full max-h-[100dvh] sm:max-h-[90dvh] overflow-y-auto rounded-t-3xl sm:rounded-lg border p-3 sm:p-6 shadow-2xl transition-all sm:my-0 sm:max-w-md sm:rounded-xl ${
         theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'
       }`}>
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-black transition-colors cursor-pointer"
+          className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded p-1 sm:p-1.5 text-gray-400 hover:bg-gray-100 hover:text-black transition-colors cursor-pointer"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </button>
 
-        <div className="mb-5">
-          <h2 className={`text-base font-bold tracking-tight font-sans flex items-center gap-1.5 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-            <Wallet2 className={`h-4.5 w-4.5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-            <span>MariTech Banking Ledger</span>
+        <div className="mb-3 sm:mb-5">
+          <h2 className={`text-sm sm:text-base font-bold tracking-tight font-sans flex items-center gap-1 sm:gap-1.5 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+            <Wallet2 className={`h-4 w-4 sm:h-4.5 sm:w-4.5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+            <span className="truncate">MariTech Banking Ledger</span>
           </h2>
-          <span className="text-[9px] text-gray-400 font-mono font-bold uppercase tracking-wide">
-            WALLET: MT-{account.id.substring(0, 10).toUpperCase()} | MODE: {account.mode.toUpperCase()}
+          <span className="text-[8px] sm:text-[9px] text-gray-400 font-mono font-bold uppercase tracking-wide truncate block">
+            WALLET: MT-{account.id.substring(0, 8).toUpperCase()}
+          </span>
+          <span className="text-[8px] sm:text-[9px] text-gray-400 font-mono font-bold uppercase tracking-wide">
+            MODE: {account.mode.toUpperCase()}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-1 rounded-md bg-gray-100 p-1 mb-5 select-none border border-gray-200/50">
+        <div className="grid grid-cols-2 gap-1 rounded-md bg-gray-100 p-1 mb-3 sm:mb-5 select-none border border-gray-200/50">
           <button
             onClick={() => {
               setActiveTab('deposit');
               setSuccessMsg('');
               setApiError('');
             }}
-            className={`flex items-center justify-center space-x-1 rounded py-1.5 text-xs font-bold uppercase transition-all cursor-pointer ${
+            className={`flex items-center justify-center space-x-1 rounded py-2 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase transition-all cursor-pointer ${
               activeTab === 'deposit' ? (theme === 'dark' ? 'bg-slate-800 text-brand-primary shadow' : 'bg-white text-black shadow') : 'text-slate-400 hover:text-brand-primary'
             }`}
           >
-            <ArrowDownCircle className="h-3.5 w-3.5" />
-            <span>Fund Deposit</span>
+            <ArrowDownCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span>Deposit</span>
           </button>
           <button
             onClick={() => {
@@ -216,35 +219,35 @@ export default function CashierModal({
               setSuccessMsg('');
               setApiError('');
             }}
-            className={`flex items-center justify-center space-x-1 rounded py-1.5 text-xs font-bold uppercase transition-all cursor-pointer ${
+            className={`flex items-center justify-center space-x-1 rounded py-2 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase transition-all cursor-pointer ${
               activeTab === 'withdraw' ? (theme === 'dark' ? 'bg-slate-800 text-brand-accent shadow' : 'bg-white text-black shadow') : 'text-slate-400 hover:text-brand-accent'
             }`}
           >
-            <ArrowUpRight className="h-3.5 w-3.5" />
-            <span>Withdraw Cash</span>
+            <ArrowUpRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span>Withdraw</span>
           </button>
         </div>
 
         {successMsg ? (
-          <div className="rounded-lg border border-green-200 bg-green-50/50 p-5 text-center space-y-4">
-            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
-              <Check className="h-5 w-5 font-bold" />
+          <div className="rounded-lg border border-green-200 bg-green-50/50 p-4 sm:p-5 text-center space-y-3 sm:space-y-4">
+            <div className="mx-auto flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
+              <Check className="h-4 w-4 sm:h-5 sm:w-5 font-bold" />
             </div>
-            <p className="text-xs text-gray-700 font-bold">{successMsg}</p>
+            <p className="text-[9px] sm:text-xs text-gray-700 font-bold">{successMsg}</p>
             <button
               onClick={() => setSuccessMsg('')}
-              className="rounded bg-black text-white px-5 py-2 text-xs font-bold uppercase hover:bg-gray-950 transition-all cursor-pointer"
+              className="rounded bg-black text-white px-4 sm:px-5 py-2.5 sm:py-2 text-[9px] sm:text-xs font-bold uppercase hover:bg-gray-950 transition-all cursor-pointer"
             >
               Continue Banking
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                USD Amount to Transfer
+              <label className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                USD Amount
               </label>
-              <div className="flex rounded-md bg-gray-50 border border-gray-200 items-center px-3 focus-within:border-black min-h-12 sm:h-10">
+              <div className="flex rounded-md bg-gray-50 border border-gray-200 items-center px-3 focus-within:border-black min-h-11 sm:min-h-10">
                 <DollarSign className="h-4 w-4 text-gray-450 flex-shrink-0" />
                 <input
                   type="number"
@@ -454,7 +457,7 @@ export default function CashierModal({
             )}
 
             {apiError && (
-              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-[10px] font-bold text-red-600">
+              <div className="rounded-md border border-red-200 bg-red-50 p-2.5 sm:p-3 text-[9px] sm:text-[10px] font-bold text-red-600">
                 {apiError}
               </div>
             )}
