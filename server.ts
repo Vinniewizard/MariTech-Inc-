@@ -221,10 +221,15 @@ Active technical indicator values: ${indicatorsString}.`}`;
   });
 
   app.get('/api/cashier/deposit-address', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     try {
       const coin = normalizeCoin(req.query.coin as string | undefined);
       const network = normalizeNetwork(req.query.network as string | undefined);
       const amount = req.query.amount ? parseAmount(req.query.amount) : undefined;
+
+      if (!binanceKey || !binanceSecret) {
+        return res.status(503).json({ success: false, message: 'Binance API credentials not configured. Set BINANCE_API_KEY and BINANCE_SECRET.' });
+      }
 
       const address = await signedBinanceRequest('GET', '/sapi/v1/capital/deposit/address', {
         coin,
@@ -234,12 +239,14 @@ Active technical indicator values: ${indicatorsString}.`}`;
 
       return res.json({ success: true, address });
     } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message });
+      console.error('Deposit address error:', error);
+      return res.status(500).json({ success: false, message: error.message || 'Failed to fetch deposit address' });
     }
   });
 
   // API Route: Binance Transaction Verification (Deposit)
   app.post('/api/cashier/verify-deposit', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     try {
       const { txHash, amount, userId } = req.body;
       const coin = normalizeCoin(req.body.coin);
@@ -301,6 +308,7 @@ Active technical indicator values: ${indicatorsString}.`}`;
 
   // API Route: Binance Withdrawal Dispatch
   app.post('/api/cashier/dispatch-withdrawal', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     try {
       const { targetAddress, addressTag, userId } = req.body;
       const coin = normalizeCoin(req.body.coin);

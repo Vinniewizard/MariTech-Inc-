@@ -8,6 +8,9 @@ export interface Env {
   BINANCE_DEPOSIT_NETWORK?: string;
   BINANCE_WITHDRAWALS_ENABLED?: string;
   DB?: D1Database;
+  ASSETS?: {
+    fetch(request: Request): Promise<Response>;
+  };
 }
 
 export interface D1Database {
@@ -28,4 +31,3 @@ export type PagesFunction<Environment = Env> = (context: {
   next: (input?: Request | string, init?: RequestInit) => Promise<Response>;
   data: Record<string, unknown>;
 }) => Response | Promise<Response>;
-

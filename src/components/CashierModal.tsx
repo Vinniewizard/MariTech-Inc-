@@ -14,6 +14,16 @@ interface CashierModalProps {
 
 type PaymentMethod = 'card' | 'crypto' | 'wire' | 'binance';
 
+async function readApiResponse(response: Response) {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!contentType.includes('application/json')) {
+    throw new Error('Cashier API route is returning HTML instead of JSON. Check the Cloudflare Worker/API deployment and D1 binding.');
+  }
+
+  return response.json();
+}
+
 export default function CashierModal({
   isOpen,
   onClose,
@@ -48,7 +58,7 @@ export default function CashierModal({
 
     fetch(`/api/cashier/deposit-address?coin=${selectedCoin}&network=${selectedNetwork}`)
       .then(async (response) => {
-        const data = await response.json();
+      const data = await readApiResponse(response);
         if (!response.ok || !data.success) {
           throw new Error(data.message || 'Unable to load Binance deposit address.');
         }
@@ -121,7 +131,7 @@ export default function CashierModal({
             userId
           })
         });
-        const data = await response.json();
+        const data = await readApiResponse(response);
         if (!response.ok || !data.success) {
           throw new Error(data.message || 'Binance deposit verification failed.');
         }
@@ -147,7 +157,7 @@ export default function CashierModal({
             userId
           })
         });
-        const data = await response.json();
+        const data = await readApiResponse(response);
         if (!response.ok || !data.success) {
           throw new Error(data.message || 'Binance withdrawal dispatch failed.');
         }
@@ -165,8 +175,8 @@ export default function CashierModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 transition-all backdrop-blur-sm">
-      <div className={`w-full max-w-md rounded-xl border p-6 shadow-2xl relative transition-all ${
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/45 p-0 transition-all backdrop-blur-sm sm:items-center sm:p-4">
+      <div className={`relative w-full rounded-t-2xl sm:rounded-lg border max-h-[90dvh] sm:max-h-[85dvh] overflow-y-auto p-4 sm:p-6 shadow-2xl transition-all sm:my-0 sm:max-w-md sm:rounded-xl ${
         theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'
       }`}>
         <button
@@ -229,31 +239,31 @@ export default function CashierModal({
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                 USD Amount to Transfer
               </label>
-              <div className="flex rounded-md bg-gray-50 border border-gray-200 items-center px-3 focus-within:border-black h-10">
-                <DollarSign className="h-4 w-4 text-gray-450" />
+              <div className="flex rounded-md bg-gray-50 border border-gray-200 items-center px-3 focus-within:border-black min-h-12 sm:h-10">
+                <DollarSign className="h-4 w-4 text-gray-450 flex-shrink-0" />
                 <input
                   type="number"
                   min={10}
                   max={50000}
                   value={amount}
                   onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full bg-transparent font-mono text-sm font-bold focus:outline-none text-current"
+                  className="w-full bg-transparent font-mono text-base sm:text-sm font-bold focus:outline-none text-current"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 sm:gap-2">
               {[50, 100, 500, 2000].map((val) => (
                 <button
                   type="button"
                   key={val}
                   onClick={() => setAmount(val)}
-                  className="rounded bg-gray-50 border border-gray-150 hover:bg-gray-100 py-1 text-[10px] font-bold text-gray-500 hover:text-black transition-all cursor-pointer"
+                  className="rounded bg-gray-50 border border-gray-150 hover:bg-gray-100 py-2 sm:py-1 text-[11px] sm:text-[10px] font-bold text-gray-500 hover:text-black transition-all cursor-pointer"
                 >
                   +${val}
                 </button>
@@ -264,56 +274,56 @@ export default function CashierModal({
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                 Select payment route
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <button
                   type="button"
                   onClick={() => selectPaymentMethod('card')}
-                  className={`rounded-lg border p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1 ${
+                  className={`rounded-lg border p-3 sm:p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 sm:gap-1 ${
                     paymentMethod === 'card' ? 'border-brand-primary text-current bg-slate-800/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <CreditCard className={`h-4 w-4 ${paymentMethod === 'card' ? 'text-brand-primary' : ''}`} />
-                  <span className="text-[8px] font-bold">Card</span>
+                  <CreditCard className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'card' ? 'text-brand-primary' : ''}`} />
+                  <span className="text-[9px] sm:text-[8px] font-bold">Card</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => selectPaymentMethod('binance')}
-                  className={`rounded-lg border p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1 ${
+                  className={`rounded-lg border p-3 sm:p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 sm:gap-1 ${
                     paymentMethod === 'binance' ? 'border-brand-accent text-current bg-amber-50/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <RefreshCw className={`h-4 w-4 ${paymentMethod === 'binance' ? 'text-brand-accent' : ''}`} />
-                  <span className="text-[8px] font-bold">Binance</span>
+                  <RefreshCw className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'binance' ? 'text-brand-accent' : ''}`} />
+                  <span className="text-[9px] sm:text-[8px] font-bold">Binance</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => selectPaymentMethod('crypto')}
-                  className={`rounded-lg border p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1 ${
+                  className={`rounded-lg border p-3 sm:p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 sm:gap-1 ${
                     paymentMethod === 'crypto' ? 'border-brand-secondary text-current bg-slate-800/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <Wallet2 className={`h-4 w-4 ${paymentMethod === 'crypto' ? 'text-brand-secondary' : ''}`} />
-                  <span className="text-[8px] font-bold">Crypto</span>
+                  <Wallet2 className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'crypto' ? 'text-brand-secondary' : ''}`} />
+                  <span className="text-[9px] sm:text-[8px] font-bold">Crypto</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => selectPaymentMethod('wire')}
-                  className={`rounded-lg border p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1 ${
+                  className={`rounded-lg border p-3 sm:p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 sm:gap-1 ${
                     paymentMethod === 'wire' ? 'border-slate-400 text-current bg-slate-800/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <DollarSign className={`h-4 w-4 ${paymentMethod === 'wire' ? 'text-slate-600' : ''}`} />
-                  <span className="text-[8px] font-bold">Wire</span>
+                  <DollarSign className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'wire' ? 'text-slate-600' : ''}`} />
+                  <span className="text-[9px] sm:text-[8px] font-bold">Wire</span>
                 </button>
               </div>
             </div>
 
             {isCryptoRoute && (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
                       Coin
@@ -321,7 +331,7 @@ export default function CashierModal({
                     <select
                       value={selectedCoin}
                       onChange={(e) => setSelectedCoin(e.target.value)}
-                      className="w-full rounded bg-slate-950 border border-slate-800 px-2 py-2 text-xs text-white font-bold outline-none"
+                      className="w-full rounded bg-slate-950 border border-slate-800 px-3 py-3 sm:py-2 text-xs text-white font-bold outline-none appearance-none cursor-pointer"
                     >
                       <option value="USDT">USDT</option>
                     </select>
@@ -333,7 +343,7 @@ export default function CashierModal({
                     <select
                       value={selectedNetwork}
                       onChange={(e) => setSelectedNetwork(e.target.value)}
-                      className="w-full rounded bg-slate-950 border border-slate-800 px-2 py-2 text-xs text-white font-bold outline-none"
+                      className="w-full rounded bg-slate-950 border border-slate-800 px-3 py-3 sm:py-2 text-xs text-white font-bold outline-none appearance-none cursor-pointer"
                     >
                       <option value="BSC">BSC / BEP20</option>
                       <option value="ETH">Ethereum / ERC20</option>
@@ -343,7 +353,7 @@ export default function CashierModal({
                 </div>
 
                 <div className="rounded-lg bg-slate-900 border border-slate-800 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest">
                       {paymentMethod === 'binance' ? 'Binance Transfer' : 'Crypto Transfer'}
                     </span>
@@ -394,7 +404,7 @@ export default function CashierModal({
                           value={txHash}
                           onChange={(e) => setTxHash(e.target.value)}
                           placeholder="Paste confirmed Binance tx hash"
-                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono focus:border-brand-primary outline-none transition-all"
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-3 sm:py-2 text-xs text-white font-mono focus:border-brand-primary outline-none transition-all"
                         />
                       </div>
 
@@ -415,7 +425,7 @@ export default function CashierModal({
                           value={targetAddress}
                           onChange={(e) => setTargetAddress(e.target.value)}
                           placeholder={`Paste ${selectedCoin}/${selectedNetwork} address`}
-                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono focus:border-brand-primary outline-none transition-all"
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-3 sm:py-2 text-xs text-white font-mono focus:border-brand-primary outline-none transition-all"
                         />
                       </div>
 
@@ -428,7 +438,7 @@ export default function CashierModal({
                           value={addressTag}
                           onChange={(e) => setAddressTag(e.target.value)}
                           placeholder="Optional"
-                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono focus:border-brand-primary outline-none transition-all"
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-3 sm:py-2 text-xs text-white font-mono focus:border-brand-primary outline-none transition-all"
                         />
                       </div>
 
@@ -462,7 +472,7 @@ export default function CashierModal({
             <button
               type="submit"
               disabled={isProcessing}
-              className="flex w-full items-center justify-center space-x-2 rounded bg-black text-white py-3.5 font-bold hover:bg-gray-950 transition-all text-xs uppercase tracking-wider cursor-pointer disabled:opacity-60"
+              className="flex w-full items-center justify-center space-x-2 rounded bg-black text-white py-4 sm:py-3.5 font-bold hover:bg-gray-950 transition-all text-xs sm:text-xs uppercase tracking-wider cursor-pointer disabled:opacity-60"
             >
               {isProcessing ? (
                 <>
