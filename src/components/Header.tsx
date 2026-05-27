@@ -46,17 +46,17 @@ export default function Header({
   };
 
   return (
-    <header className={`sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b px-6 transition-colors duration-200 ${
+    <header className={`sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b px-3 sm:px-6 transition-colors duration-200 gap-2 overflow-x-auto ${
       theme === 'dark' ? 'border-slate-800 bg-slate-950 text-white' : 'border-slate-200 bg-slate-50 text-slate-900'
     }`}>
       {/* Brand Logo & Core navigation */}
-      <div className="flex items-center space-x-8">
-        <div className="flex items-center space-x-2 cursor-pointer" onClick={() => onSwitchView('trade')}>
-          <div className="w-8 h-8 bg-black rounded flex items-center justify-center">
-            <span className="text-white font-bold italic">M</span>
+      <div className="flex items-center space-x-2 sm:space-x-8 flex-shrink-0">
+        <div className="flex items-center space-x-1 sm:space-x-2 cursor-pointer flex-shrink-0" onClick={() => onSwitchView('trade')}>
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-black rounded flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold italic text-sm">M</span>
           </div>
-          <div>
-            <span className={`text-base font-bold tracking-tight ${theme === 'dark' ? 'text-zinc-50' : 'text-black'}`}>
+          <div className="hidden sm:block">
+            <span className={`text-xs sm:text-base font-bold tracking-tight ${theme === 'dark' ? 'text-zinc-50' : 'text-black'}`}>
               MARITECH <span className="font-normal opacity-50">INC.</span>
             </span>
           </div>
@@ -102,36 +102,37 @@ export default function Header({
       </div>
 
       {/* Right - Controls and Account Selector */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0 ml-auto">
         {/* Theme toggle Button */}
         <button
           onClick={onToggleTheme}
-          className={`rounded-lg p-1.5 transition-colors ${theme === 'dark' ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' : 'text-slate-500 hover:text-slate-900 hover:bg-white'}`}
+          className={`rounded-lg p-1 sm:p-1.5 transition-colors flex-shrink-0 ${theme === 'dark' ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' : 'text-slate-500 hover:text-slate-900 hover:bg-white'}`}
           title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
         >
-          {theme === 'dark' ? <Sun className="h-4.5 w-4.5 text-brand-accent shadow-[0_0_10px_rgba(245,158,11,0.3)]" /> : <Moon className="h-4.5 w-4.5 text-indigo-500" />}
+          {theme === 'dark' ? <Sun className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5 text-brand-accent shadow-[0_0_10px_rgba(245,158,11,0.3)]" /> : <Moon className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5 text-indigo-500" />}
         </button>
 
         {/* Total balance displays */}
-        <div className="text-right flex flex-col justify-center">
-          <div className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Total Balance</div>
-          <div className={`text-sm font-mono font-black tracking-tight ${theme === 'dark' ? 'text-zinc-50' : 'text-black'}`}>
+        <div className="text-right hidden sm:flex flex-col justify-center flex-shrink-0">
+          <div className="text-[8px] uppercase tracking-wider text-gray-400 font-bold">Total Balance</div>
+          <div className={`text-xs sm:text-sm font-mono font-black tracking-tight ${theme === 'dark' ? 'text-zinc-50' : 'text-black'}`}>
             ${formatBalance(account.balance)}
           </div>
         </div>
 
         {/* Interactive Account Hub */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className={`flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition-all cursor-pointer select-none border ${
+            className={`flex items-center space-x-1 rounded-md px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold transition-all cursor-pointer select-none border flex-shrink-0 ${
               theme === 'dark'
                 ? 'bg-zinc-900 border-zinc-800 text-zinc-100 hover:bg-zinc-850'
                 : 'bg-white border-gray-200 text-black hover:bg-gray-50'
             }`}
           >
-            <span>{account.mode === 'demo' ? 'DEMO' : 'REAL'}</span>
-            <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+            <span className="hidden sm:inline">{account.mode === 'demo' ? 'DEMO' : 'REAL'}</span>
+            <span className="sm:hidden">{account.mode === 'demo' ? 'D' : 'R'}</span>
+            <ChevronDown className={`h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
 
           {/* Account selector dropdown menu */}
@@ -217,7 +218,7 @@ export default function Header({
             onOpenCashier();
           }}
           disabled={false}
-          className={`px-4 sm:px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-black/10 active:scale-95 ${
+          className={`px-2 sm:px-4 py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-black/10 active:scale-95 flex-shrink-0 ${
             currentUser
               ? 'bg-slate-900 hover:bg-black text-white'
               : 'bg-gray-300 text-gray-500 hover:bg-gray-400'
@@ -230,23 +231,24 @@ export default function Header({
         {/* Settings button - added after Cashier */}
         <button
           onClick={onOpenSettings}
-          className={`rounded-md p-2 transition-all cursor-pointer border ${
+          className={`rounded-md p-1.5 sm:p-2 transition-all cursor-pointer border flex-shrink-0 ${
             theme === 'dark' 
               ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800' 
               : 'bg-white border-gray-200 text-gray-500 hover:text-black hover:bg-gray-50'
           }`}
           title="Personal Settings"
         >
-          <SettingsIcon className="h-4.5 w-4.5" />
+          <SettingsIcon className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
         </button>
 
         {/* Auth button */}
         {!currentUser && (
           <button
             onClick={onOpenAuth}
-            className="rounded-lg px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer bg-gradient-to-r from-cyan-500 to-violet-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 active:scale-95"
+            className="rounded-lg px-2 sm:px-5 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer bg-gradient-to-r from-cyan-500 to-violet-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 active:scale-95 flex-shrink-0"
           >
-            Sign In
+            <span className="hidden sm:inline">Sign In</span>
+            <span className="sm:hidden">Sign</span>
           </button>
         )}
       </div>
