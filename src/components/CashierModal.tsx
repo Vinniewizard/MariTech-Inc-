@@ -12,7 +12,7 @@ interface CashierModalProps {
   theme: 'dark' | 'light';
 }
 
-type PaymentMethod = 'card' | 'crypto' | 'wire' | 'binance';
+type PaymentMethod = 'nowpayments' | 'crypto' | 'paybill';
 
 async function readApiResponse(response: Response) {
   const contentType = response.headers.get('content-type') || '';
@@ -35,19 +35,22 @@ export default function CashierModal({
 }: CashierModalProps) {
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
   const [amount, setAmount] = useState<number>(100);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('binance');
-  const [selectedCoin, setSelectedCoin] = useState('USDT');
-  const [selectedNetwork, setSelectedNetwork] = useState('BSC');
-  const [depositAddress, setDepositAddress] = useState<{ address?: string; tag?: string; url?: string } | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('nowpayments');
+  const [selectedCoin, setSelectedCoin] = useState('BTC');
+  const [selectedNetwork, setSelectedNetwork] = useState('BTC');
+  const [depositAddress, setDepositAddress] = useState<{ address?: string; tag?: string; url?: string; paymentId?: string } | null>(null);
   const [txHash, setTxHash] = useState('');
+  const [mpesaMessage, setMpesaMessage] = useState('');
   const [targetAddress, setTargetAddress] = useState('');
   const [addressTag, setAddressTag] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAddressLoading, setIsAddressLoading] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [apiError, setApiError] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<string>('');
 
-  const isCryptoRoute = paymentMethod === 'binance' || paymentMethod === 'crypto';
+  const isCryptoRoute = paymentMethod === 'nowpayments' || paymentMethod === 'crypto';
 
   useEffect(() => {
     if (!isOpen || activeTab !== 'deposit' || !isCryptoRoute) return;
@@ -55,19 +58,36 @@ export default function CashierModal({
     let cancelled = false;
     setIsAddressLoading(true);
     setApiError('');
+    setDepositAddress(null);
 
-    fetch(`/api/cashier/deposit-address?coin=${selectedCoin}&network=${selectedNetwork}`)
+    const userId = currentUser?.id || currentUser?.email || account.id;
+
+    // For NOWPayments, we create a payment record immediately to get an address
+    fetch(`/api/cashier/create-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount,
+        coin: selectedCoin,
+        userId
+      })
+    })
       .then(async (response) => {
-      const data = await readApiResponse(response);
+        const data = await readApiResponse(response);
         if (!response.ok || !data.success) {
-          throw new Error(data.message || 'Unable to load Binance deposit address.');
+          throw new Error(data.message || 'Unable to create NOWPayments session.');
         }
-        if (!cancelled) setDepositAddress(data.address);
+        if (!cancelled) {
+          setDepositAddress({
+            address: data.address,
+            paymentId: data.payment_id
+          });
+        }
       })
       .catch((error) => {
         if (!cancelled) {
           setDepositAddress(null);
-          setApiError(error.message || 'Unable to load Binance deposit address.');
+          setApiError(error.message || 'Unable to load deposit address.');
         }
       })
       .finally(() => {
@@ -77,7 +97,7 @@ export default function CashierModal({
     return () => {
       cancelled = true;
     };
-  }, [activeTab, isCryptoRoute, isOpen, selectedCoin, selectedNetwork]);
+  }, [activeTab, isCryptoRoute, isOpen, selectedCoin, amount]);
 
   if (!isOpen) return null;
 
@@ -86,9 +106,9 @@ export default function CashierModal({
     setSuccessMsg('');
     setApiError('');
 
-    if (method === 'binance') {
-      setSelectedCoin('USDT');
-      setSelectedNetwork('BSC');
+    if (method === 'nowpayments') {
+      setSelectedCoin('BTC');
+      setSelectedNetwork('BTC');
     } else if (method === 'crypto') {
       setSelectedCoin('USDT');
       setSelectedNetwork('ETH');
@@ -109,37 +129,66 @@ export default function CashierModal({
     setApiError('');
 
     try {
-      if (!isCryptoRoute) {
-        throw new Error('This payment route is not connected to a live processor. Use Binance or Crypto.');
-      }
-
       const userId = currentUser?.id || currentUser?.email || account.id;
 
+      if (paymentMethod === 'paybill') {
+        if (activeTab === 'deposit' && !receiptFile) {
+          throw new Error('Please upload your M-Pesa receipt for verification.');
+        }
+
+        if (activeTab === 'deposit') {
+          const formData = new FormData();
+          formData.append('receipt', receiptFile!);
+          formData.append('userId', userId);
+          formData.append('amount', amount.toString());
+          formData.append('paymentMethod', 'paybill');
+          if (receiptFile) formData.append('receipt', receiptFile);
+          if (mpesaMessage) formData.append('message', mpesaMessage);
+
+          if (!receiptFile && !mpesaMessage) {
+            throw new Error('Please provide either an M-Pesa receipt image or the transaction message.');
+          }
+
+          const response = await fetch('/api/cashier/upload-receipt', {
+            method: 'POST',
+            body: formData
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Receipt upload failed.');
+          }
+
+          setReceiptFile(null);
+          setMpesaMessage('');
+          setSuccessMsg('Deposit details submitted! MariTech admin will verify and credit your account within 30 minutes.');
+          return;
+        } else {
+          // Paybill withdrawal? Usually it's to M-Pesa. For now, let's say it's pending.
+          throw new Error('M-Pesa withdrawals are currently processed manually. Please contact support with your M-Pesa number.');
+        }
+      }
+
+      if (!isCryptoRoute) {
+        throw new Error('This payment route is not connected to a live processor.');
+      }
+
       if (activeTab === 'deposit') {
-        if (!txHash.trim()) {
-          throw new Error('Enter the Binance transaction hash after sending funds.');
+        if (!depositAddress?.paymentId) {
+          throw new Error('Please wait for the deposit address to load.');
         }
 
-        const response = await fetch('/api/cashier/verify-deposit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            txHash: txHash.trim(),
-            amount,
-            coin: selectedCoin,
-            network: selectedNetwork,
-            userId
-          })
-        });
+        const response = await fetch(`/api/cashier/verify-deposit?paymentId=${depositAddress.paymentId}&userId=${userId}`);
         const data = await readApiResponse(response);
+        
         if (!response.ok || !data.success) {
-          throw new Error(data.message || 'Binance deposit verification failed.');
+          setPaymentStatus(data.status || 'waiting');
+          throw new Error(data.message || 'Deposit not yet confirmed on the blockchain.');
         }
 
-        const creditedAmount = Number(data.creditedAmountUsd) || amount;
+        const creditedAmount = Number(data.creditedAmount) || amount;
         onDeposit(creditedAmount);
-        setTxHash('');
-        setSuccessMsg(`Binance verified ${selectedCoin}/${selectedNetwork} deposit. $${creditedAmount.toLocaleString()} has been credited to your MariTech ${account.mode === 'demo' ? 'Demo' : 'Real'} wallet.`);
+        setSuccessMsg(`Deposit successful! $${creditedAmount.toLocaleString()} has been credited via NOWPayments.`);
       } else {
         if (!targetAddress.trim()) {
           throw new Error('Enter the receiving wallet address.');
@@ -150,22 +199,20 @@ export default function CashierModal({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             targetAddress: targetAddress.trim(),
-            addressTag: addressTag.trim(),
             amount,
             coin: selectedCoin,
-            network: selectedNetwork,
             userId
           })
         });
         const data = await readApiResponse(response);
         if (!response.ok || !data.success) {
-          throw new Error(data.message || 'Binance withdrawal dispatch failed.');
+          throw new Error(data.message || 'Withdrawal dispatch failed.');
         }
 
         onWithdraw(amount);
         setTargetAddress('');
         setAddressTag('');
-        setSuccessMsg(`Withdrawal submitted to Binance. $${amount.toLocaleString()} is now processing to your ${selectedCoin}/${selectedNetwork} wallet.`);
+        setSuccessMsg(`Withdrawal submitted. $${amount.toLocaleString()} is now being processed to your ${selectedCoin} wallet.`);
       }
     } catch (error: any) {
       setApiError(error.message || 'Cashier request failed.');
@@ -277,27 +324,27 @@ export default function CashierModal({
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                 Select payment route
               </label>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => selectPaymentMethod('card')}
+                  onClick={() => selectPaymentMethod('paybill')}
                   className={`rounded-lg border p-3 sm:p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 sm:gap-1 ${
-                    paymentMethod === 'card' ? 'border-brand-primary text-current bg-slate-800/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
+                    paymentMethod === 'paybill' ? 'border-green-500 text-current bg-green-50/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <CreditCard className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'card' ? 'text-brand-primary' : ''}`} />
-                  <span className="text-[9px] sm:text-[8px] font-bold">Card</span>
+                  <DollarSign className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'paybill' ? 'text-green-500' : ''}`} />
+                  <span className="text-[9px] sm:text-[8px] font-bold">M-Pesa</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => selectPaymentMethod('binance')}
+                  onClick={() => selectPaymentMethod('nowpayments')}
                   className={`rounded-lg border p-3 sm:p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 sm:gap-1 ${
-                    paymentMethod === 'binance' ? 'border-brand-accent text-current bg-amber-50/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
+                    paymentMethod === 'nowpayments' ? 'border-brand-accent text-current bg-amber-50/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <RefreshCw className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'binance' ? 'text-brand-accent' : ''}`} />
-                  <span className="text-[9px] sm:text-[8px] font-bold">Binance</span>
+                  <RefreshCw className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'nowpayments' ? 'text-brand-accent' : ''}`} />
+                  <span className="text-[9px] sm:text-[8px] font-bold">BTC (API)</span>
                 </button>
 
                 <button
@@ -309,17 +356,6 @@ export default function CashierModal({
                 >
                   <Wallet2 className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'crypto' ? 'text-brand-secondary' : ''}`} />
                   <span className="text-[9px] sm:text-[8px] font-bold">Crypto</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => selectPaymentMethod('wire')}
-                  className={`rounded-lg border p-3 sm:p-2 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 sm:gap-1 ${
-                    paymentMethod === 'wire' ? 'border-slate-400 text-current bg-slate-800/10' : 'border-slate-200 text-slate-400 hover:bg-slate-50'
-                  }`}
-                >
-                  <DollarSign className={`h-5 w-5 sm:h-4 sm:w-4 ${paymentMethod === 'wire' ? 'text-slate-600' : ''}`} />
-                  <span className="text-[9px] sm:text-[8px] font-bold">Wire</span>
                 </button>
               </div>
             </div>
@@ -333,32 +369,35 @@ export default function CashierModal({
                     </label>
                     <select
                       value={selectedCoin}
-                      onChange={(e) => setSelectedCoin(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedCoin(e.target.value);
+                        if (e.target.value === 'BTC') setSelectedNetwork('BTC');
+                        else if (e.target.value === 'ETH') setSelectedNetwork('ETH');
+                        else if (e.target.value === 'USDTTRC20') setSelectedNetwork('TRX');
+                        else if (e.target.value === 'USDT') setSelectedNetwork('ETH');
+                      }}
                       className="w-full rounded bg-slate-950 border border-slate-800 px-3 py-3 sm:py-2 text-xs text-white font-bold outline-none appearance-none cursor-pointer"
                     >
-                      <option value="USDT">USDT</option>
+                      <option value="BTC">BTC (Bitcoin)</option>
+                      <option value="ETH">ETH (Ethereum)</option>
+                      <option value="USDT">USDT (ERC20)</option>
+                      <option value="USDTTRC20">USDT (TRC20)</option>
                     </select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
                       Network
                     </label>
-                    <select
-                      value={selectedNetwork}
-                      onChange={(e) => setSelectedNetwork(e.target.value)}
-                      className="w-full rounded bg-slate-950 border border-slate-800 px-3 py-3 sm:py-2 text-xs text-white font-bold outline-none appearance-none cursor-pointer"
-                    >
-                      <option value="BSC">BSC / BEP20</option>
-                      <option value="ETH">Ethereum / ERC20</option>
-                      <option value="TRX">Tron / TRC20</option>
-                    </select>
+                    <div className="w-full rounded bg-slate-900 border border-slate-800 px-3 py-3 sm:py-2 text-xs text-brand-primary font-bold">
+                      {selectedNetwork}
+                    </div>
                   </div>
                 </div>
 
                 <div className="rounded-lg bg-slate-900 border border-slate-800 p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest">
-                      {paymentMethod === 'binance' ? 'Binance Transfer' : 'Crypto Transfer'}
+                      {paymentMethod === 'nowpayments' ? 'NOWPayments BTC' : 'Crypto Transfer'}
                     </span>
                     <Shield className="h-3.5 w-3.5 text-brand-primary" />
                   </div>
@@ -371,7 +410,7 @@ export default function CashierModal({
                         </p>
                         <div className="flex items-center space-x-2 bg-slate-950 p-2 rounded border border-slate-800">
                           <code className="text-[10px] text-brand-primary font-mono truncate flex-1">
-                            {isAddressLoading ? 'Loading live Binance address...' : depositAddress?.address || 'Address unavailable'}
+                            {isAddressLoading ? 'Generating NOWPayments address...' : depositAddress?.address || 'Address unavailable'}
                           </code>
                           <button
                             type="button"
@@ -398,23 +437,13 @@ export default function CashierModal({
                         )}
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                          Binance Transaction Hash
-                        </label>
-                        <input
-                          type="text"
-                          value={txHash}
-                          onChange={(e) => setTxHash(e.target.value)}
-                          placeholder="Paste confirmed Binance tx hash"
-                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-3 sm:py-2 text-xs text-white font-mono focus:border-brand-primary outline-none transition-all"
-                        />
-                      </div>
-
                       <div className="p-3 bg-brand-primary/5 rounded border border-brand-primary/20">
                         <p className="text-[10px] text-slate-300 font-medium leading-relaxed">
-                          Send exactly <span className="text-brand-primary font-bold">${amount} {selectedCoin}</span>. Your balance is credited only after Binance reports the transaction as successful.
+                          Send exactly <span className="text-brand-primary font-bold">{depositAddress?.amount || '...'} {selectedCoin}</span> to the address above. Your balance is credited automatically after confirmation.
                         </p>
+                        {depositAddress?.paymentId && (
+                           <p className="text-[9px] text-slate-500 mt-2 font-mono">Session ID: {depositAddress.paymentId}</p>
+                        )}
                       </div>
                     </>
                   ) : (
@@ -447,7 +476,7 @@ export default function CashierModal({
 
                       <div className="p-3 bg-amber-500/5 rounded border border-amber-500/20">
                         <p className="text-[10px] text-slate-300 font-medium leading-relaxed">
-                          Live withdrawal dispatch uses the Binance withdrawal API for {selectedCoin}/{selectedNetwork}.
+                          Live withdrawal dispatch uses the NOWPayments API for {selectedCoin}.
                         </p>
                       </div>
                     </>
@@ -462,13 +491,66 @@ export default function CashierModal({
               </div>
             )}
 
-            {!isCryptoRoute && (
+            {paymentMethod === 'paybill' && (
+              <div className="rounded-lg bg-slate-900 border border-slate-800 p-4 space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                  <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">
+                    M-Pesa Lipa Na Paybill
+                  </span>
+                  <DollarSign className="h-3.5 w-3.5 text-green-500" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">Business Number</p>
+                    <p className="text-sm font-mono font-bold text-white">542542</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">Account Number</p>
+                    <p className="text-sm font-mono font-bold text-white">00204484326150</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Option A: Paste M-Pesa Confirmation Message
+                  </label>
+                  <textarea
+                    value={mpesaMessage}
+                    onChange={(e) => setMpesaMessage(e.target.value)}
+                    placeholder="Paste the message here (e.g. QXJ7... Confirmed. Ksh...)"
+                    className="w-full h-20 bg-slate-950 border border-slate-800 rounded p-2 text-[10px] text-white font-mono focus:border-green-500 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Option B: Upload Payment Receipt (Screenshot)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:font-bold file:bg-green-500 file:text-white hover:file:bg-green-600 cursor-pointer"
+                  />
+                  {receiptFile && <p className="text-[9px] text-green-500 font-bold">Selected: {receiptFile.name}</p>}
+                </div>
+
+                <div className="p-3 bg-green-500/5 rounded border border-green-500/20">
+                  <p className="text-[10px] text-slate-300 font-medium leading-relaxed">
+                    Instructions: Pay <span className="text-green-500 font-bold">${amount}</span> to the Paybill above, take a screenshot of the confirmation message, and upload it here.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {!isCryptoRoute && paymentMethod !== 'paybill' && (
               <div className="rounded-md bg-gray-50 p-3 border border-gray-150 text-[10px] font-mono text-gray-500 space-y-1">
                 <div className="flex justify-between font-bold text-black">
-                  <span>{paymentMethod === 'card' ? 'Card processor' : 'Wire processor'}</span>
+                  <span>Processor</span>
                   <span>Not connected</span>
                 </div>
-                <div>Use Binance or Crypto for production transfers.</div>
+                <div>Use BTC (API), Crypto or M-Pesa for transfers.</div>
               </div>
             )}
 
@@ -480,12 +562,12 @@ export default function CashierModal({
               {isProcessing ? (
                 <>
                   <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1" />
-                  <span>{activeTab === 'deposit' ? 'Verifying Binance Deposit...' : 'Submitting Withdrawal...'}</span>
+                  <span>{activeTab === 'deposit' ? 'Verifying Payment...' : 'Submitting Withdrawal...'}</span>
                 </>
               ) : (
-                <span>
-                  {activeTab === 'deposit' ? 'Verify Deposit' : 'Dispatch Withdrawal'}
-                </span>
+                <span>{activeTab === 'deposit' 
+                  ? (paymentMethod === 'paybill' ? 'Upload & Notify Admin' : 'Verify Deposit') 
+                  : 'Dispatch Withdrawal'}</span>
               )}
             </button>
           </form>

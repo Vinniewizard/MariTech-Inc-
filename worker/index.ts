@@ -1,5 +1,7 @@
 import { onRequestGet as getDepositAddress } from '../functions/api/cashier/deposit-address';
 import { onRequestPost as verifyDeposit } from '../functions/api/cashier/verify-deposit';
+import { onRequestPost as createPayment } from '../functions/api/cashier/create-payment';
+import { onRequestPost as nowPaymentsWebhook } from '../functions/api/cashier/nowpayments-webhook';
 import { onRequestPost as dispatchWithdrawal } from '../functions/api/cashier/dispatch-withdrawal';
 import { onRequestPost as analyzeCopilot } from '../functions/api/copilot/analyze';
 import { jsonResponse } from '../functions/_shared/http';
@@ -26,6 +28,14 @@ export default {
 
     if (url.pathname === '/api/cashier/verify-deposit' && request.method === 'POST') {
       return verifyDeposit(createContext(request, env));
+    }
+
+    if (url.pathname === '/api/cashier/create-payment' && request.method === 'POST') {
+      return createPayment(createContext(request, env));
+    }
+
+    if (url.pathname === '/api/cashier/nowpayments-webhook' && request.method === 'POST') {
+      return nowPaymentsWebhook(createContext(request, env));
     }
 
     if (url.pathname === '/api/cashier/dispatch-withdrawal' && request.method === 'POST') {

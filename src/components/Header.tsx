@@ -14,6 +14,7 @@ interface HeaderProps {
   onSwitchView: (view: 'trade' | 'history' | 'stats') => void;
   onOpenSettings: () => void;
   onOpenAuth: () => void;
+  onOpenAdmin?: () => void;
   currentUser?: any;
 }
 
@@ -29,6 +30,7 @@ export default function Header({
   onSwitchView,
   onOpenSettings,
   onOpenAuth,
+  onOpenAdmin,
   currentUser
 }: HeaderProps) {
   const [time, setTime] = useState(new Date());
@@ -241,16 +243,7 @@ export default function Header({
           <SettingsIcon className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
         </button>
 
-        {/* Auth button */}
-        {!currentUser && (
-          <button
-            onClick={onOpenAuth}
-            className="rounded-lg px-2 sm:px-5 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer bg-gradient-to-r from-cyan-500 to-violet-600 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 active:scale-95 flex-shrink-0"
-          >
-            <span className="hidden sm:inline">Sign In</span>
-            <span className="sm:hidden">Sign</span>
-          </button>
-        )}
+
       </div>
     </header>
   );

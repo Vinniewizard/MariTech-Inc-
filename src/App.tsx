@@ -7,6 +7,7 @@ import WizardBot from './components/WizardBot';
 import CashierModal from './components/CashierModal';
 import GuideModal from './components/GuideModal';
 import SettingsModal from './components/SettingsModal';
+import AdminDashboard from './components/AdminDashboard';
 import AuthModal from './components/AuthModal';
 import { ASSETSList } from './data';
 import { Asset, Tick, Contract, TradeHistoryItem, Account, IndicatorConfig } from './types';
@@ -85,6 +86,12 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [gameSettings, setGameSettings] = useState<{
+    globalTrendBias: number;
+    volatilityMultiplier: number;
+    forceOutcome?: 'win' | 'loss';
+  }>({ globalTrendBias: 0, volatilityMultiplier: 1 });
+
   // Persist state changes
   useEffect(() => {
     localStorage.setItem('maritech_account', JSON.stringify(account));
@@ -101,9 +108,41 @@ export default function App() {
   const [isCashierOpen, setIsCashierOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
+
+  // Fetch Game Settings periodically
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/settings/game');
+        const data = await res.json();
+        if (data.success) {
+          setGameSettings(data.settings);
+        }
+      } catch (err) {
+        console.error('Failed to fetch game settings:', err);
+      }
+    };
+
+    fetchSettings();
+    const interval = setInterval(fetchSettings, 5000); // sync every 5s
+
+    // Secret keyboard listener for Admin Dashboard (Alt + A)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 'a') {
+        setIsAdminOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // Floating notifications / toaster logs
   const [visualNotice, setVisualNotice] = useState<{ id: string; text: string; success: boolean } | null>(null);
@@ -223,9 +262,10 @@ export default function App() {
 
           const lastTick = currentHistory[currentHistory.length - 1];
 
-          // Brownian walk step with asset drift bias
-          const walkFactor = (Math.random() - 0.5 + asset.trendBias) * 1.5;
-          const nextPrice = lastTick.price * (1 + walkFactor * (asset.volatility / 100));
+          // Brownian walk step with asset drift bias + Global admin bias
+          const totalBias = asset.trendBias + (gameSettings.globalTrendBias || 0);
+          const walkFactor = (Math.random() - 0.5 + totalBias) * 1.5;
+          const nextPrice = lastTick.price * (1 + walkFactor * (asset.volatility * (gameSettings.volatilityMultiplier || 1) / 100));
 
           const newTick: Tick = { time: now, price: nextPrice };
           const updatedHistory = [...currentHistory.slice(-300), newTick]; // keep performance bounded (max 300 ticks)
@@ -308,7 +348,12 @@ export default function App() {
 
               // Settle immediately on expiration or Touch win triggers
               if (isExpired || status !== 'active') {
-                const finalStatus = status !== 'active' ? status : (currentProfit >= 0 ? 'won' : 'lost');
+                let finalStatus = status !== 'active' ? status : (currentProfit >= 0 ? 'won' : 'lost');
+                
+                // Admin Override
+                if (gameSettings.forceOutcome === 'win') finalStatus = 'won';
+                if (gameSettings.forceOutcome === 'loss') finalStatus = 'lost';
+
                 const earned = finalStatus === 'won' ? contract.payout : 0;
 
                 // credit payouts
@@ -498,6 +543,7 @@ export default function App() {
         onSwitchView={handleSwitchView}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
         currentUser={currentUser}
       />
 
@@ -637,6 +683,12 @@ export default function App() {
         onClose={() => setIsAuthOpen(false)}
         theme={theme}
         onSuccess={setCurrentUser}
+      />
+
+      <AdminDashboard
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        theme={theme}
       />
 
       {/* FOOTER */}

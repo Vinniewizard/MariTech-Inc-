@@ -19,16 +19,11 @@ export default function SettingsModal({ isOpen, onClose, account, theme, current
   const [isEditingEmail, setIsEditingEmail] = React.useState(false);
   const [emailInput, setEmailInput] = React.useState('');
   const [emailError, setEmailError] = React.useState('');
-  const [binanceApiKey, setBinanceApiKey] = React.useState('');
-  const [binanceSecret, setBinanceSecret] = React.useState('');
-  const [isEditingBinance, setIsEditingBinance] = React.useState(false);
 
   React.useEffect(() => {
     if (currentUser) {
       setPhoneInput(currentUser.phone || '');
       setEmailInput(currentUser.email || '');
-      setBinanceApiKey(currentUser.binanceApiKey || '');
-      setBinanceSecret(currentUser.binanceSecret || '');
     }
   }, [currentUser]);
 
@@ -78,20 +73,7 @@ export default function SettingsModal({ isOpen, onClose, account, theme, current
     }
   };
 
-  const handleSaveBinance = () => {
-    setIsEditingBinance(false);
-    if (currentUser && onUpdateUser) {
-      const users = JSON.parse(localStorage.getItem('maritech_users') || '[]');
-      const updatedUsers = users.map((u: any) => {
-          if (u.email === currentUser.email) {
-              return { ...u, binanceApiKey, binanceSecret };
-          }
-          return u;
-      });
-      localStorage.setItem('maritech_users', JSON.stringify(updatedUsers));
-      onUpdateUser({ ...currentUser, binanceApiKey, binanceSecret });
-    }
-  };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 transition-all backdrop-blur-sm">
@@ -236,55 +218,7 @@ export default function SettingsModal({ isOpen, onClose, account, theme, current
                 </div>
               </div>
 
-              {/* Binance API Section */}
-              <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/20 border-zinc-800' : 'bg-white border-gray-100'}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3 text-sm">
-                    <Shield className={`h-4 w-4 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`} />
-                    <span className="font-bold">Binance API Configuration</span>
-                  </div>
-                  <button 
-                    onClick={() => isEditingBinance ? handleSaveBinance() : setIsEditingBinance(true)}
-                    className={`p-1.5 rounded-md transition-colors ${
-                      isEditingBinance ? 'bg-green-500 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-gray-100 text-gray-500')
-                    }`}
-                  >
-                    {isEditingBinance ? <Check className="h-3 w-3" /> : <Edit2 className="h-3 w-3" />}
-                  </button>
-                </div>
-                {isEditingBinance ? (
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-bold text-gray-400">API Key</label>
-                      <input
-                        type="password"
-                        value={binanceApiKey}
-                        onChange={(e) => setBinanceApiKey(e.target.value)}
-                        placeholder="Enter Binance API Key"
-                        className={`w-full rounded px-2 py-1.5 text-xs border focus:outline-none ${
-                          isDark ? 'bg-zinc-950 border-zinc-800 text-white' : 'bg-gray-50 border-gray-200 text-black'
-                        }`}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-bold text-gray-400">Secret Key</label>
-                      <input
-                        type="password"
-                        value={binanceSecret}
-                        onChange={(e) => setBinanceSecret(e.target.value)}
-                        placeholder="Enter Binance Secret Key"
-                        className={`w-full rounded px-2 py-1.5 text-xs border focus:outline-none ${
-                          isDark ? 'bg-zinc-950 border-zinc-800 text-white' : 'bg-gray-50 border-gray-200 text-black'
-                        }`}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-[10px] text-gray-400 font-mono">
-                    {binanceApiKey ? '•••••••••••••••• (Encrypted)' : 'No API Key Configured'}
-                  </div>
-                )}
-              </div>
+
             </div>
           )}
 
