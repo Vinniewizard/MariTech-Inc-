@@ -8,7 +8,7 @@ export async function nowPaymentsRequest(
 ) {
   const apiKey = env.NOWPAYMENTS_API_KEY;
   if (!apiKey) {
-    throw new Error('NOWPayments API key is not configured.');
+    throw new Error('NOWPAYMENTS_API_KEY environment variable is missing on Cloudflare runtime.');
   }
 
   const baseUrl = env.NOWPAYMENTS_BASE_URL || 'https://api.nowpayments.io/v1';
